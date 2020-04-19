@@ -1,0 +1,237 @@
+html,
+body {
+  background: #000;
+  color: #fff;
+  height: 100%;
+  margin: 0;
+  min-height: 100%;
+  position: relative;
+  font-family: sans-serif;
+  text-align: center;
+}
+
+.marquee {
+  overflow: hidden;
+  display: block;
+  left: 0;
+  position: absolute;
+  top: 0;
+}
+svg {
+  display: block;
+}
+.logo {
+  fill: #fff;
+}
+
+.logo-icon {
+    height: 15px;
+    margin-left: 0.5em;
+}
+
+.hidden {
+    display: none;
+    z-index:3;
+}
+
+span.bold {
+    font-weight: bold;
+    font-size: 20px;
+    z-index:3;
+}
+
+.bold h1 {
+    font-weight: bold;
+    margin: 0;
+    font-size: 35px;
+}
+
+table {
+    display: block;
+    width: 100%;
+    /*
+    align-items: center;
+    margin: 10px auto;
+    clear: left;
+    */
+}
+
+table tr td {
+    padding: 5px;
+}
+
+div.small {
+    font-size: 8px;
+    z-index:3;
+}
+
+ul {
+    list-style: none;
+    padding: 0;
+    z-index:3;
+}
+
+a:link, a:visited {
+    color: inherit;
+    text-decoration: inherit;
+    font-weight: bold;
+    font-style: italic;
+    z-index:3;
+}
+
+a:link div, a:visited div {
+    font-weight: normal;
+    font-style: normal;
+    z-index:3;
+}
+
+
+.isrc, .barcode {
+    font-family: monospace;
+    z-index:3;
+}
+
+.track-mismatch {
+    background: rgb(139, 41, 41);
+    z-index:3;
+}
+
+.track-near-match {
+    background: #ff7;
+    margin-right: 3px;
+    z-index:3;
+}
+
+.track-match {
+    background: #0d1;
+    margin-right: 3px;
+    z-index:3;
+}
+
+.album-summary, .album-tracklist {
+    margin-left:auto;
+    margin-right:auto;
+    width: 90%;
+    align-items:center;
+    border-collapse:separate;
+    border-spacing:10px 5px;
+    /*
+    width:94%;
+
+     */
+}
+
+.album-cover {
+    width: 300px;
+    height: 300px;
+    border-radius: 15px;
+    flex-grow: 0;
+    flex-shrink: 0;
+    z-index:3;
+}
+
+.album-cover, .album-metadata {
+    margin: 8px;
+    z-index:3;
+}
+
+.album-metadata {
+    flex-basis: 300px;
+    flex-grow: 1;
+    flex-shrink: 1;
+    z-index:3;
+}
+
+.album-metadata div {
+    margin-bottom:6px;
+    z-index:3;
+}
+
+.album-summary {
+    display: flex;
+    flex-wrap: wrap;
+}
+
+tr:first-child td {
+    font-weight: bold;
+}
+
+.artist-view-wrapper {
+    display: flex;
+    flex-wrap: wrap;
+}
+
+.artist-album {
+    text-align: left;
+    flex-basis: 150px;
+    background-color: rgba(255, 255, 255, 0.2);
+    padding: 10px;
+    margin: 4px;
+    border-radius: 5px;
+    flex-grow: 1;
+    display: flex;
+    transition: all 0.5s;
+}
+
+.artist-album:hover {
+    background-color: rgba(255, 255, 255, 0.5);
+    z-index:3;
+}
+
+.artist-album div {
+    margin-left: 4px;
+    display: inline-block;
+    z-index:3;
+}
+
+.artist-album div span {
+    display: block;
+    font-size: 18px;
+    z-index:3;
+}
+
+.artist-album img {
+    display: inline-block;
+    width: 50px;
+    height: 50px;
+    flex-shrink: 0;
+    z-index:3;
+}
+
+.main-wrapper {
+    margin: 40px;
+    background: #222;
+    padding: 50px 28px;
+    border-radius: 20px;
+    display: inline-block;
+    text-align: left;
+    max-width: 1400px;
+    position: relative;
+    z-index:3;
+}
+.footer-button {
+    width: auto;
+    margin: 0 auto;
+}
+.buttonWD, .buttonQS {
+  background-color: #DDE6FC;
+  border-radius: 10px;
+  border: none;
+  color: black;
+  padding: 15px 32px;
+  text-align: center;
+  text-decoration: none;
+  font-size: 16px;
+  cursor: pointer;
+  position: relative;
+  display: inline-block;
+}
+
+button {
+  margin:auto;
+  display:block;
+}
+
+button:hover{
+  background: #A6ACA5;
+}
