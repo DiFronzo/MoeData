@@ -3,7 +3,7 @@ Import tracklists from Spotify to Wikidata
 
 ## Docker
 
-To use the dockerfile, you could do the following:
+To use the dockerfile, you could do the following (in root folder):
 
   ``docker build -f dockerfile -t moedata:prod .``
   
