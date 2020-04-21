@@ -10,7 +10,7 @@ $ mkdir ~/public_html
 $ git clone https://github.com/DiFronzo/MoeData.git
 $ cd MoeData
 $ npm run build
-$ cp /build/* ../public_html
+$ cp -r build/* ../public_html/
 $ cd ..
 $ vim service.template
 ```
