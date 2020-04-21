@@ -206,8 +206,7 @@ class SpotifyHandler extends React.Component {
             let year,
                 month,
                 day;
-            let P31_1 = "Q7302866";//audio track & song
-            let P31_2 = "Q7366";
+            let P31_1 = "Q7366";//audio track & song
             let P437 = "Q15982450";
             let spotTrack = this.state.album.Tracks[ind].id;
             let isrc = this.state.album.Tracks2[ind].isrc;
@@ -228,17 +227,19 @@ class SpotifyHandler extends React.Component {
             });
             artistWD = artistWD.filter((obj) => { return ![null, undefined].includes(obj) })
             artistWD = artistWD.join('');
-            let RLabelWD = '';
-            if (Array.isArray(this.state.wdAlbum.result.entities[this.props.qid].claims.P264)) {
-                RLabelWD = this.state.wdAlbum.result.entities[this.props.qid].claims.P264.map((item, index) => {
-                    return "||LAST|P264|" + item.mainsnak.datavalue.value.id;
-                });
-                RLabelWD = RLabelWD.filter((obj) => { return ![null, undefined].includes(obj) })
-                RLabelWD = RLabelWD.join('');
-            }
+            //let RLabelWD = '';
+            //if (Array.isArray(this.state.wdAlbum.result.entities[this.props.qid].claims.P264)) {
+            //    RLabelWD = this.state.wdAlbum.result.entities[this.props.qid].claims.P264.map((item, index) => {
+            //        return "||LAST|P264|" + item.mainsnak.datavalue.value.id;
+            //    });
+            //    RLabelWD = RLabelWD.filter((obj) => { return ![null, undefined].includes(obj) })
+            //    RLabelWD = RLabelWD.join('');
+            //}
 
-            let name = this.state.album.Tracks[ind].name.replace(/.-(?=[^-]*$).*/g,'');
+            let name = this.state.album.Tracks[ind].name.replace(/\s-\s(?=[^-]*$).*/g,'');
                 name = name.replace(/ *\([f|F]eat[^)]*\) */g,'');
+                name = name.replace(/ *\([w|W]ith[^)]*\) */g,'');
+                name = name.replace(/ *\([m|M]ed[^)]*\) */g,'');
                 if (name === '') name = this.state.album.Tracks[ind].name;
                 if (name === name.toUpperCase()) {
                     name = name.toLowerCase();
@@ -246,26 +247,22 @@ class SpotifyHandler extends React.Component {
                 }
 
             if (result.wdId === "" && result.queryMatch === false) {
-                return `||CREATE||LAST|Len|"${name}"||LAST|Den|"${parseInt(year)} song by ${artistSpot}"||LAST|P31|${P31_1}||LAST|P31|${P31_2}||LAST|P361|${this.props.qid}|P1545|"${result.nr}"${artistWD}||LAST|P577|${fullDate}|P1552|${this.props.qid}||LAST|P2047|${Math.floor(this.state.album.Tracks[ind].duration_ms / 1000)}U11574|P518|${P437}||LAST|P1476|mul:"${name}"||LAST|P1243|"${isrc}"|P4390|Q39893449||LAST|P2207|"${spotTrack}"|P4390|Q39893449|P1810|"${this.state.album.Tracks[ind].name}"||LAST|P437|${P437}${RLabelWD}||${this.props.qid}|P658|LAST|P1545|"${result.nr}"`;
+                return `||CREATE||LAST|Len|"${name}"||LAST|Den|"${parseInt(year)} song by ${artistSpot}"||LAST|P31|${P31_1}||LAST|P361|${this.props.qid}|P1545|"${result.nr}"${artistWD}||LAST|P577|${fullDate}|P1552|${this.props.qid}||LAST|P2047|${Math.floor(this.state.album.Tracks[ind].duration_ms / 1000)}U11574|P518|${P437}||LAST|P1476|mul:"${name}"||LAST|P1243|"${isrc}"|P4390|Q39893449||LAST|P2207|"${spotTrack}"|P4390|Q39893449|P1810|"${this.state.album.Tracks[ind].name}"||LAST|P437|${P437}||${this.props.qid}|P658|LAST|P1545|"${result.nr}"`;
             }
 
             let type = result.queryMatch ? querytrack.entities[result.wdId]?.claims : this.state.wdTrack.result.entities[result.wdId]?.claims;
 
             if (!Array.isArray(type.P31)) {
-                trackBody += `||${result.wdId}|P31|${P31_1}||${result.wdId}|P31|${P31_2}`;
+                trackBody += `||${result.wdId}|P31|${P31_1}`;
             } else {
                 let path = result.queryMatch ? querytrack.entities[result.wdId]?.claims?.P31 : this.state.wdTrack.result.entities[result.wdId]?.claims?.P31;
-                let found = false,
-                    found2 = false;
+                let found = false;
                 for (let b = 0; b < path.length; b++){
                     if (path[b].mainsnak.datavalue.value.id === P31_1){
                         found = true;
-                    } else if (path[b].mainsnak.datavalue.value.id === P31_2){
-                        found2 = true;
                     }
                 }
                 if (!found) trackBody += `||${result.wdId}|P31|${P31_1}`;
-                if (!found2) trackBody += `||${result.wdId}|P31|${P31_2}`;
             }
 
             if (!Array.isArray(type.P1243)) {
@@ -326,10 +323,10 @@ class SpotifyHandler extends React.Component {
                 if (!found5) trackBody += `||${result.wdId}|P361|${this.props.qid}|P1545|"${result.nr}"`;
             }
 
-            if (!Array.isArray(type.P264) && RLabelWD){
-                RLabelWD = RLabelWD.replace(/LAST/gm,`${result.wdId}`)
-                trackBody += RLabelWD;
-            }
+            //if (!Array.isArray(type.P264) && RLabelWD){
+            //    RLabelWD = RLabelWD.replace(/LAST/gm,`${result.wdId}`)
+            //    trackBody += RLabelWD;
+            //}
 
             if (!Array.isArray(type.P175) && artistWD){
                 artistWD = artistWD.replace(/LAST/gm,`${result.wdId}`)
@@ -556,6 +553,7 @@ class SpotifyHandler extends React.Component {
                 }
             } else alert("Multi-disc releases not yet supported by MoeData - use at own risk");
             bodyAlbum = await bodyAlbum.replace(/undefined/gm,'');
+            bodyAlbum = await bodyAlbum.replace(/&/gm,'﹠');
             //bodyAlbum = await bodyAlbum.replace(/\|/gm,'%09');
             //bodyAlbum = await bodyAlbum.replace(/"/gm,'%22');
             //bodyAlbum = await bodyAlbum.replace(/\//gm,'%2F');
@@ -655,9 +653,7 @@ class SpotifyHandler extends React.Component {
               for (let q = 0; q < wdArtist.length; q++) {
                   for (let w = 0; w < wdArtist[q].value.length; w++) {
                       if (wdArtist[q].value[w].toLowerCase() === item.name.toLowerCase()) {
-                          artistqid =
-                              <a style={{ whiteSpace: "pre"}} key={wdArtist[q].id} href={`https://www.wikidata.org/wiki/${wdArtist[q].id}`}><span
-                                  className="barcode" style={{fontSize: "12px"}}>({wdArtist[q].id})</span></a>;
+                          artistqid = wdArtist[q].id
                           break;
                       }
                   }
@@ -665,11 +661,7 @@ class SpotifyHandler extends React.Component {
               }
 
           }
-          return (
-              <div style={{display: "inline-block"}} key={item.id}>
-                  <a style={{ whiteSpace: "pre"}} key={`/artist/${item.id}`} href={`/artist/${item.id}`}>{(index ? ', ' : '') + item.name}</a>
-                  {artistqid}
-              </div>)
+          return (<span key={index+1}><a style={{Display: 'inline-block'}} key={`/artist/${item.id}`} href={`/artist/${item.id}`}>{(index ? ', ' : '') + item.name}</a><a href={`https://www.wikidata.org/wiki/${artistqid}`}><span key={`/wd/${artistqid}`} className="barcode" style={{fontSize: "12px"}}>{(artistqid ? '(' + artistqid + ')' : '')}</span></a></span>)
       })
 
       let stop = <svg viewBox="0 0 1000 1000" width={20} height={20} ><path d="M846.5 153.5c-191.4-191.4-501.6-191.4-693 0s-191.4 501.6 0 693 501.6 191.4 693 0c191.3-191.4 191.3-501.6 0-693zm-86.6 86.6c128.8 128.8 142 329.3 39.7 472.8L287.1 200.4c143.5-102.2 344-89 472.8 39.7zM240.1 759.9c-128.8-128.8-142-329.3-39.7-472.8l512.5 512.5c-143.5 102.2-344 89-472.8-39.7z" fill="#d60005"/></svg>;
@@ -739,6 +731,7 @@ class SpotifyHandler extends React.Component {
           } else return ''
       })
       let indexval = false;
+
       return (
           <div className="main-wrapper">
               <div className="album-summary">
