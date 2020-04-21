@@ -206,7 +206,7 @@ class SpotifyHandler extends React.Component {
             let year,
                 month,
                 day;
-            let P31_1 = "Q7366";//audio track & song
+            let P31_1 = "Q7302866";//audio track & song
             let P437 = "Q15982450";
             let spotTrack = this.state.album.Tracks[ind].id;
             let isrc = this.state.album.Tracks2[ind].isrc;
@@ -661,7 +661,7 @@ class SpotifyHandler extends React.Component {
               }
 
           }
-          return (<span key={index+1}><a style={{Display: 'inline-block'}} key={`/artist/${item.id}`} href={`/artist/${item.id}`}>{(index ? ', ' : '') + item.name}</a><a href={`https://www.wikidata.org/wiki/${artistqid}`}><span key={`/wd/${artistqid}`} className="barcode" style={{fontSize: "12px"}}>{(artistqid ? '(' + artistqid + ')' : '')}</span></a></span>)
+          return (<span key={index+1}><a style={{Display: 'inline-block'}} key={`/artist/${item.id}`} href={`/artist/${item.id}`}>{(index ? ', ' : '') + item.name}</a><a href={`https://www.wikidata.org/wiki/${artistqid}`}><span key={`/wd/${artistqid}`} className="barcode" style={{fontSize: "12px"}}>{(artistqid ? ' (' + artistqid + ')' : '')}</span></a></span>)
       })
 
       let stop = <svg viewBox="0 0 1000 1000" width={20} height={20} ><path d="M846.5 153.5c-191.4-191.4-501.6-191.4-693 0s-191.4 501.6 0 693 501.6 191.4 693 0c191.3-191.4 191.3-501.6 0-693zm-86.6 86.6c128.8 128.8 142 329.3 39.7 472.8L287.1 200.4c143.5-102.2 344-89 472.8 39.7zM240.1 759.9c-128.8-128.8-142-329.3-39.7-472.8l512.5 512.5c-143.5 102.2-344 89-472.8-39.7z" fill="#d60005"/></svg>;
