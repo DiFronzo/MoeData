@@ -2,7 +2,6 @@ import React from "react";
 import ReactHtmlParser from 'react-html-parser';
 import MyLoader from "./Loader";
 
-
 class SpotifyHandler extends React.Component {
     constructor(props) {
       super(props);
@@ -25,7 +24,7 @@ class SpotifyHandler extends React.Component {
     }
 
     async getAlbum2() {
-        const response = await fetch('https://cors-anywhere.herokuapp.com/https://tatsumo.pythonanywhere.com/api/album/'+this.props.page, { headers: { Accept: "application/json" } });
+        const response = await fetch('https://api.allorigins.win/raw?url=https://tatsumo.pythonanywhere.com/api/album/'+this.props.page, { headers: { Accept: "application/json" } });
         const data = await response.json();
         this.setState({
             ...this.state,
@@ -222,6 +221,8 @@ class SpotifyHandler extends React.Component {
             let artistSpot = this.state.album.P175.map((item, index) => {
                 return (index ? ', ' : '') + item.name
             })
+            artistSpot = artistSpot.filter((obj) => { return ![null, undefined].includes(obj) })
+            artistSpot = artistSpot.join('');
             let artistWD= this.state.wdAlbum.result.entities[this.props.qid].claims.P175.map((item, index) => {
                 return "||LAST|P175|" + item.mainsnak.datavalue.value.id;
             });
@@ -240,6 +241,7 @@ class SpotifyHandler extends React.Component {
                 name = name.replace(/ *\([f|F]eat[^)]*\) */g,'');
                 name = name.replace(/ *\([w|W]ith[^)]*\) */g,'');
                 name = name.replace(/ *\([m|M]ed[^)]*\) */g,'');
+                name = name.replace(/ *\([i|I]nterlude[^)]*\) */g,'');
                 if (name === '') name = this.state.album.Tracks[ind].name;
                 if (name === name.toUpperCase()) {
                     name = name.toLowerCase();
@@ -719,7 +721,7 @@ class SpotifyHandler extends React.Component {
                       <td>{artist}</td>
                       <td className="isrc">{this.state.album.Tracks2[index].isrc}</td>
                       <td>{result[index].minutes}</td>
-                      <td ref={this.myRef}>{result[index].wdStatus}&nbsp;<a style={{display: "inline-block"}} href="javascript:" onClick={() => {let ind = index; result[ind].wdStatus = "ⓧ";result[ind].wdId = ''; result[ind].P1545 = 0; console.log(`Removed match of track ${ind+1} registered!`)}}>{stop}</a>&nbsp;<a style={{display: "inline-block"}} href="javascript:" onClick={() => {let ind = index; result[ind].skip = true;console.log(`Skip of track ${ind+1} registered!`)}}> {skip} </a></td>
+                      <td ref={this.myRef}>{result[index].wdStatus}&nbsp;<a style={{display: "inline-block", cursor: "pointer"}} onClick={() => {let ind = index; result[ind].wdStatus = "ⓧ"; result[ind].wdId = ''; result[ind].P1545 = 0; result[ind].queryMatch = false; console.log(`Removed match of track ${ind+1} registered!`)}}>{stop}</a>&nbsp;<a style={{display: "inline-block", cursor: "pointer"}} onClick={() => {let ind = index; result[ind].skip = true;console.log(`Skip of track ${ind+1} registered!`)}}> {skip} </a></td>
                   </tr>
               )
           });
@@ -761,7 +763,7 @@ class SpotifyHandler extends React.Component {
                   </table>
                   <div className="footer-button">
                       <button className="buttonWD" onClick={() => alert("Not implemented, yet!")}>Import to Wikidata</button>
-                      <button className="buttonQS" onClick={() => {this.generateQS([...result]); indexval = true; }}>{indexval ? 'Loading...' : 'QuickStatements (QS)'}</button>
+                      <button className="buttonQS" onClick={() => {this.generateQS([...result]); console.log(result) }}>{indexval ? 'Loading...' : 'QuickStatements (QS)'}</button>
                   </div>
               </div>
           </div>
