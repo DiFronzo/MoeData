@@ -640,14 +640,14 @@ class SpotifyHandler extends React.Component {
     async MusicBrainz () {
         const title = encodeURIComponent(this.state.album.Label);
         const artist1 = encodeURIComponent(this.state.album.P175[0].name);
-        let url = `http://musicbrainz.org/ws/2/release-group/?query=release:${title}%20AND%20artist:${artist1}&fmt=json`;
+        let url = `https://cors-anywhere.herokuapp.com/https://musicbrainz.org/ws/2/release-group/?query=release:${title}%20AND%20artist:${artist1}&fmt=json`;
         const response = await fetch(url);
         const data = await response.json();
         if (Array.isArray(data["release-groups"]) && data["release-groups"].length > 0 && data["release-groups"][0].score === 100) {
             const titleGr = data["release-groups"][0].title;
             const releaseGroups = data["release-groups"][0].id;
             const reid = data["release-groups"][0].releases[0].id;
-            const url2 = `http://musicbrainz.org/ws/2/recording/?query=reid:${reid}&fmt=json`;
+            const url2 = `https://cors-anywhere.herokuapp.com/https://musicbrainz.org/ws/2/recording/?query=reid:${reid}&fmt=json`;
             const response2 = await fetch(url2);
             const data2 = await response2.json();
             if (data2.recordings.length === this.state.album.Tracks.length) {
