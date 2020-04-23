@@ -254,11 +254,16 @@ button:hover{
     border-radius: 10px;
     z-index: 3;
 }
-.footer p {float:left; width:100%; text-align:center; color: white; z-index: 3;}
+.footerContent p {float:left; width:100%; text-align:center; color: white;}
 
-.footerContent:hover, .footer p:hover {
+.footerContent:hover {
     color: black;
-    background-color:white;
-    border-color: black;
+    background-color: white;
+    z-index: 3;
+}
+
+.footerContent:hover p{
+    color: black;
+    background-color: white;
     z-index: 3;
 }

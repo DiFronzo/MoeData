@@ -1,5 +1,4 @@
 import React from "react";
-import ReactHtmlParser from 'react-html-parser';
 import MyLoader from "./Loader";
 
 class SpotifyHandler extends React.Component {
@@ -646,7 +645,16 @@ class SpotifyHandler extends React.Component {
         if (Array.isArray(data["release-groups"]) && data["release-groups"].length > 0 && data["release-groups"][0].score === 100) {
             const titleGr = data["release-groups"][0].title;
             const releaseGroups = data["release-groups"][0].id;
-            const reid = data["release-groups"][0].releases[0].id;
+            let reid;
+            let found = false;
+            for (let o = 0; o < data["release-groups"][0].releases.length; o++){
+                if (data["release-groups"][0].releases[o].status === "Official"){
+                    found = true;
+                    reid = data["release-groups"][0].releases[o].id;
+                    break;
+                }
+            }
+            if (!found) reid = data["release-groups"][0].releases[0].id;
             const url2 = `https://cors-anywhere.herokuapp.com/https://musicbrainz.org/ws/2/recording/?query=reid:${reid}&fmt=json`;
             const response2 = await fetch(url2);
             const data2 = await response2.json();
@@ -655,13 +663,13 @@ class SpotifyHandler extends React.Component {
                     ...this.state,
                     MB: {Loading: false, releaseGroups: releaseGroups, titleGr: titleGr, tracks: data2.recordings}
                 })
-                return ""
+                return "";
             }
         }
         this.setState({
             ...this.state,
             MB: {Loading: false, releaseGroups: '', tracks: []}
-        })
+        });
     }
 
     onUpdateItem = i => {
@@ -683,7 +691,7 @@ class SpotifyHandler extends React.Component {
   render() {
       //setTimeout(() => { if (this.state.album.P2635 === 0) return <Redirect to={{pathname: "/404"}}/>; }, 4000);
 
-      const MaaLoader = () => <MyLoader/>
+      const MaaLoader = () => <MyLoader/>;
 
       let qidAlbum;
       if (this.props.qid) {
@@ -733,7 +741,7 @@ class SpotifyHandler extends React.Component {
       let header;
       let result = [];
 
-      if ((this.state.Loading && this.props.qid) || this.state.album.Loading) {
+      if ((this.state.MB.Loading && this.props.qid) || this.state.MB.Loading) {
           loading = (
               <div className="album-tracklist">
                   {Array(10)
