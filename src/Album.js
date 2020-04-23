@@ -3,6 +3,8 @@ import {Redirect} from 'react-router-dom';
 import SpotifyHandler from "./spotifyHandler";
 import SvgComponent from "./SvgComponent";
 
+var pjson = require('../package.json');
+
 class Album extends React.Component {
 
     render() {
@@ -24,6 +26,13 @@ class Album extends React.Component {
                     <SvgComponent />
                 </div>
                 <SpotifyHandler page={pageId} qid={regexqid}/>
+                <div className="footerWrap">
+                  <div className="footer">
+                      <div className="footerContent">
+                          <p>Version {pjson.version}</p>
+                      </div>
+                  </div>
+              </div>
             </div>
         )
     };

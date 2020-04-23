@@ -12,7 +12,8 @@ class SpotifyHandler extends React.Component {
           wdAlbum: {Loading: true, result: {entities: {wdId: { claims: {P175: [{mainsnak: {datavalue: {value: {id: ''}}}}], P658: [] } } } } },
           wdLabel: {Loading: true, result: {entities: { wdId: {labels: {en: { value: '' } } } } } }, //artist label!!!
           wdTrack: {Loading: true, result: {entities: {} } },
-          wdQuery: {Loading: true, result: '' }
+          wdQuery: {Loading: true, result: '' },
+          MB: {Loading: true, releaseGroups: '', tracks: [] }
       };
     }
 
@@ -21,6 +22,7 @@ class SpotifyHandler extends React.Component {
         await this.getWDAlbum();
         await this.getWDInfo();
         await this.getWDQuery();
+        await this.MusicBrainz();
     }
 
     async getAlbum2() {
@@ -198,6 +200,16 @@ class SpotifyHandler extends React.Component {
         return await response.json();
     }
 
+    regexName2 (sendval) {
+        let name = sendval.replace(/\s-\s(?=[^-]*$).*/g,'');
+        name = name.replace(/ *\([f|F]eat[^)]*\) */g,'');
+        name = name.replace(/ *\([w|W]ith[^)]*\) */g,'');
+        name = name.replace(/ *\([m|M]ed[^)]*\) */g,'');
+        name = name.replace(/ *\([i|I]nterlude[^)]*\) */g,'');
+        if (name === '') name = sendval;
+        return name
+    }
+
     QSitem(result, querytrack) {
         if (Array.isArray(this.state.wdAlbum.result.entities[this.props.qid].claims?.P175)) {
             let ind = result.nr - 1;
@@ -223,6 +235,7 @@ class SpotifyHandler extends React.Component {
             })
             artistSpot = artistSpot.filter((obj) => { return ![null, undefined].includes(obj) })
             artistSpot = artistSpot.join('');
+
             let artistWD= this.state.wdAlbum.result.entities[this.props.qid].claims.P175.map((item, index) => {
                 return "||LAST|P175|" + item.mainsnak.datavalue.value.id;
             });
@@ -236,20 +249,24 @@ class SpotifyHandler extends React.Component {
             //    RLabelWD = RLabelWD.filter((obj) => { return ![null, undefined].includes(obj) })
             //    RLabelWD = RLabelWD.join('');
             //}
-
-            let name = this.state.album.Tracks[ind].name.replace(/\s-\s(?=[^-]*$).*/g,'');
-                name = name.replace(/ *\([f|F]eat[^)]*\) */g,'');
-                name = name.replace(/ *\([w|W]ith[^)]*\) */g,'');
-                name = name.replace(/ *\([m|M]ed[^)]*\) */g,'');
-                name = name.replace(/ *\([i|I]nterlude[^)]*\) */g,'');
-                if (name === '') name = this.state.album.Tracks[ind].name;
-                if (name === name.toUpperCase()) {
-                    name = name.toLowerCase();
-                    name = name.replace(/(^\w{1})|(\s{1}\w{1})/g, match => match.toUpperCase());
-                }
+            let name = this.state.album.Tracks[ind].name;
+            if (!this.state.album.Tracks[ind].name.match(/\s-\s(?=[^-]*$).*[R|r]emix/g)) name = this.state.album.Tracks[ind].name.replace(/\s-\s(?=[^-]*$).*/g,'');
+            name = name.replace(/ *\([f|F]eat[^)]*\) */g,'');
+            name = name.replace(/ *\([w|W]ith[^)]*\) */g,'');
+            name = name.replace(/ *\([m|M]ed[^)]*\) */g,'');
+            name = name.replace(/ *\([i|I]nterlude[^)]*\) */g,'');
+            if (name === '') name = this.state.album.Tracks[ind].name;
+            if (name === name.toUpperCase()) {
+                name = name.toLowerCase();
+                name = name.replace(/(^\w{1})|(\s{1}\w{1})/g, match => match.toUpperCase());
+            }
+            let mbGroup;
+            if (result.MBindex !== -1 && this.state.MB.tracks[result.MBindex].title !== 'ⓧ') {
+                mbGroup = `P4404|"${this.state.MB.tracks[result.MBindex].id}"|P1810|"${this.state.MB.tracks[result.MBindex].title}"`
+            }
 
             if (result.wdId === "" && result.queryMatch === false) {
-                return `||CREATE||LAST|Len|"${name}"||LAST|Den|"${parseInt(year)} song by ${artistSpot}"||LAST|P31|${P31_1}||LAST|P361|${this.props.qid}|P1545|"${result.nr}"${artistWD}||LAST|P577|${fullDate}|P1552|${this.props.qid}||LAST|P2047|${Math.floor(this.state.album.Tracks[ind].duration_ms / 1000)}U11574|P518|${P437}||LAST|P1476|mul:"${name}"||LAST|P1243|"${isrc}"|P4390|Q39893449||LAST|P2207|"${spotTrack}"|P4390|Q39893449|P1810|"${this.state.album.Tracks[ind].name}"||LAST|P437|${P437}||${this.props.qid}|P658|LAST|P1545|"${result.nr}"`;
+                return `||CREATE||LAST|Len|"${name}"||LAST|Den|"${parseInt(year)} song by ${artistSpot}"||LAST|P31|${P31_1}||LAST|P1433|${this.props.qid}|P1545|"${result.nr}"|P577|${fullDate}${artistWD}||LAST|P2047|${Math.floor(this.state.album.Tracks[ind].duration_ms / 1000)}U11574|P518|${P437}||LAST|${mbGroup}||LAST|P1476|mul:"${name}"||LAST|P1243|"${isrc}"|P4390|Q39893449||LAST|P2207|"${spotTrack}"|P4390|Q39893449|P1810|"${this.state.album.Tracks[ind].name}"||LAST|P437|${P437}||${this.props.qid}|P658|LAST|P1545|"${result.nr}"`;
             }
 
             let type = result.queryMatch ? querytrack.entities[result.wdId]?.claims : this.state.wdTrack.result.entities[result.wdId]?.claims;
@@ -309,20 +326,24 @@ class SpotifyHandler extends React.Component {
                 if (!found4) trackBody += `||${result.wdId}|P437|${P437}`;
             }
 
-            if (!Array.isArray(type.P361)) {
-                trackBody += `||${result.wdId}|P361|${this.props.qid}|P1545|"${result.nr}"`;
+            if (!Array.isArray(type.P1433)) {
+                if (fullDate) trackBody += `||${result.wdId}|P1433|${this.props.qid}|P1545|"${result.nr}"|P577|${fullDate}`;
+                else trackBody += `||${result.wdId}|P1433|${this.props.qid}|P1545|"${result.nr}"`;
             } else {
                 let found5;
-                for (let q = 0; q < type.P361.length; q++){
-                    if (type.P361[q].mainsnak.datavalue.value.id === this.props.qid){
+                for (let q = 0; q < type.P1433.length; q++){
+                    if (type.P1433[q].mainsnak.datavalue.value.id === this.props.qid){
                         found5 = true;
-                        if (!Array.isArray(type.P361[q].qualifiers?.P1545)){
-                            trackBody += `||${result.wdId}|P361|${this.props.qid}|P1545|"${result.nr}"`;
-                            break;
+                        if (!Array.isArray(type.P1433[q].qualifiers?.P1545)){
+                            trackBody += `||${result.wdId}|P1433|${this.props.qid}|P1545|"${result.nr}"`;
                         }
+                        if (!Array.isArray(type.P1433[q].qualifiers?.P577)) {
+                            trackBody += `||${result.wdId}|P1433|${this.props.qid}|P577|${fullDate}`;
+                        }
+
                     }
                 }
-                if (!found5) trackBody += `||${result.wdId}|P361|${this.props.qid}|P1545|"${result.nr}"`;
+                if (!found5) trackBody += `||${result.wdId}|P1433|${this.props.qid}|P1545|"${result.nr}"|P577|${fullDate}`;
             }
 
             //if (!Array.isArray(type.P264) && RLabelWD){
@@ -353,15 +374,8 @@ class SpotifyHandler extends React.Component {
 
             }
 
-            if (!Array.isArray(type.P577)) {
-                trackBody += `||${result.wdId}|P577|${fullDate}|P1552|${this.props.qid}`;
-            } else {
-                let check = false;
-                for (let g = 0; g < type.P577.length; g++){
-                    if (type.P577[g].mainsnak.datavalue.value.precision !== 11 && fullDate.substr(fullDate.length - 1) !== '9'){
-                    } else check = true
-                }
-                if (!check) trackBody += `||${result.wdId}|P577|${fullDate}|P1552|${this.props.qid}`;
+            if (!Array.isArray(type.P4404) && result.MBindex !== -1 && this.state.MB.tracks[result.MBindex].title !== 'ⓧ') {
+                trackBody += `||${result.wdId}|${mbGroup}`;
             }
 
             if (result.P1545 === 0) {
@@ -536,6 +550,10 @@ class SpotifyHandler extends React.Component {
                 }
             }
 
+            if (!Array.isArray(this.state.wdAlbum.result.entities[this.props.qid].claims.P436) && this.state.MB.releaseGroups) {
+                bodyAlbum += `||${this.props.qid}|P436|"${this.state.MB.releaseGroups}"|P1810|"${this.state.MB.titleGr}"`;
+            }
+
             if (!Array.isArray(this.state.wdAlbum.result.entities[this.props.qid].claims.P1476)) {
                 let P1476 = this.state.album.Label;
                 if (P1476 === P1476.toUpperCase()) {
@@ -619,6 +637,48 @@ class SpotifyHandler extends React.Component {
         }
     }
 
+    async MusicBrainz () {
+        const title = encodeURIComponent(this.state.album.Label);
+        const artist1 = encodeURIComponent(this.state.album.P175[0].name);
+        let url = `http://musicbrainz.org/ws/2/release-group/?query=release:${title}%20AND%20artist:${artist1}&fmt=json`;
+        const response = await fetch(url);
+        const data = await response.json();
+        if (Array.isArray(data["release-groups"]) && data["release-groups"].length > 0 && data["release-groups"][0].score === 100) {
+            const titleGr = data["release-groups"][0].title;
+            const releaseGroups = data["release-groups"][0].id;
+            const reid = data["release-groups"][0].releases[0].id;
+            const url2 = `http://musicbrainz.org/ws/2/recording/?query=reid:${reid}&fmt=json`;
+            const response2 = await fetch(url2);
+            const data2 = await response2.json();
+            if (data2.recordings.length === this.state.album.Tracks.length) {
+                this.setState({
+                    ...this.state,
+                    MB: {Loading: false, releaseGroups: releaseGroups, titleGr: titleGr, tracks: data2.recordings}
+                })
+                return ""
+            }
+        }
+        this.setState({
+            ...this.state,
+            MB: {Loading: false, releaseGroups: '', tracks: []}
+        })
+    }
+
+    onUpdateItem = i => {
+        this.setState(state => {
+            const list = state.MB.tracks.map((item, j) => {
+                if (j === i) {
+                    return item.title = "ⓧ";
+                } else {
+                    return item;
+                }
+            });
+            return {
+                list,
+            };
+        });
+    };
+
 
   render() {
       //setTimeout(() => { if (this.state.album.P2635 === 0) return <Redirect to={{pathname: "/404"}}/>; }, 4000);
@@ -654,7 +714,7 @@ class SpotifyHandler extends React.Component {
           if (Array.isArray(wdArtist) && wdArtist.length) {
               for (let q = 0; q < wdArtist.length; q++) {
                   for (let w = 0; w < wdArtist[q].value.length; w++) {
-                      if (wdArtist[q].value[w].toLowerCase() === item.name.toLowerCase()) {
+                      if (wdArtist[q].value[w].toLowerCase() === this.regexName2(item.name).toLowerCase()) {
                           artistqid = wdArtist[q].id
                           break;
                       }
@@ -690,6 +750,7 @@ class SpotifyHandler extends React.Component {
                   <td>Artist(s)</td>
                   <td>ISRC</td>
                   <td>Length</td>
+                  <td>MusicBrainz</td>
                   <td>Wikidata item</td>
               </tr>
           );
@@ -708,31 +769,53 @@ class SpotifyHandler extends React.Component {
               if (wdmatch && this.props.qid){
                   wdStatus = <a style={{fontSize: "16px", display: "inline-block"}} href={`https://www.wikidata.org/wiki/${wdmatch.id}`}>{wdmatch.label} <span className="barcode">({wdmatch.queryMatch ? "*" : ''}{wdmatch.id})</span></a>;
               }
+              let MBindex = -1;
+              for (let z = 0; z < this.state.MB.tracks.length; z++) {
+                  if ((Array.isArray(this.state.MB.tracks[z].isrcs) && this.state.MB.tracks[z].isrcs[0] === this.state.album.Tracks2[index].isrc) || item.name.toLowerCase() === this.state.MB.tracks[z].title.toLowerCase()) {
+                      MBindex = z;
+                      break;
+                  }
+              }
 
-              if (this.props.qid) {
-                  if (wdmatch) result.push({nr: index + 1, spotTitle: item.name, wdTitle: wdmatch.label, wdId: wdmatch.id, queryMatch: wdmatch.queryMatch, P1545: wdmatch.P1545, spotArtist: artist, wdStatus: wdStatus, minutes: minutes, skip: false})
-                  else result.push({nr: index + 1, spotTitle: item.name, wdTitle: '' ,wdId: '' , queryMatch: false, P1545: 0, spotArtist: artist, wdStatus: wdStatus, minutes: minutes, skip: false})
-              } else result.push({nr: index + 1, spotTitle: item.name, wdTitle: '' ,wdId: '' , queryMatch: false, P1545: 0, spotArtist: artist, wdStatus: wdStatus, minutes: minutes, skip: false})
+              if (!this.state.MB.Loading) {
+                  if (this.props.qid) {
+                      if (wdmatch) result.push({nr: index + 1, spotTitle: item.name, wdTitle: wdmatch.label, wdId: wdmatch.id, queryMatch: wdmatch.queryMatch, P1545: wdmatch.P1545, spotArtist: artist, wdStatus: wdStatus, minutes: minutes, skip: false, MBindex: MBindex})
+                      else result.push({nr: index + 1, spotTitle: item.name, wdTitle: '' ,wdId: '' , queryMatch: false, P1545: 0, spotArtist: artist, wdStatus: wdStatus, minutes: minutes, skip: false, MBindex: MBindex})
+                  } else result.push({nr: index + 1, spotTitle: item.name, wdTitle: '' ,wdId: '' , queryMatch: false, P1545: 0, spotArtist: artist, wdStatus: wdStatus, minutes: minutes, skip: false, MBindex: MBindex})
+              }
 
-              return (
-                  <tr key={index + 1}>
-                      <td>{result[index].nr}.</td>
-                      <td><a href={item.external_urls.spotify}> "{item.name}" </a></td>
-                      <td>{artist}</td>
-                      <td className="isrc">{this.state.album.Tracks2[index].isrc}</td>
-                      <td>{result[index].minutes}</td>
-                      <td ref={this.myRef}>{result[index].wdStatus}&nbsp;<a style={{display: "inline-block", cursor: "pointer"}} onClick={() => {let ind = index; result[ind].wdStatus = "ⓧ"; result[ind].wdId = ''; result[ind].P1545 = 0; result[ind].queryMatch = false; console.log(`Removed match of track ${ind+1} registered!`)}}>{stop}</a>&nbsp;<a style={{display: "inline-block", cursor: "pointer"}} onClick={() => {let ind = index; result[ind].skip = true;console.log(`Skip of track ${ind+1} registered!`)}}> {skip} </a></td>
-                  </tr>
-              )
+              if (!this.state.MB.Loading){
+                  return (
+                      <tr key={index + 1}>
+                          <td>{result[index].nr}.</td>
+                          <td><a href={item.external_urls.spotify}> "{item.name}" </a></td>
+                          <td>{artist}</td>
+                          <td className="isrc">{this.state.album.Tracks2[index].isrc}</td>
+                          <td>{result[index].minutes}</td>
+                          <td>{this.state.MB.tracks[MBindex] ?
+                              <div><a href={`https://beta.musicbrainz.org/recording/${this.state.MB.tracks[MBindex].id}`}>"{this.state.MB.tracks[MBindex].title}"</a> <a style={{display: "inline-block", cursor: "pointer"}} onClick={() => {
+                                  this.onUpdateItem(MBindex);
+                                  console.log(`Removed match to MB track registered!`)
+                              }}>{stop}</a></div> : "ⓧ"}</td>
+                          <td ref={this.myRef}>{result[index].wdStatus}&nbsp;<a style={{display: "inline-block", cursor: "pointer"}} onClick={() => {let ind = index; result[ind].wdStatus = "ⓧ"; result[ind].wdId = ''; result[ind].P1545 = 0; result[ind].queryMatch = false; console.log(`Removed match of track ${ind+1} registered!`)}}>{stop}</a>&nbsp;<a style={{display: "inline-block", cursor: "pointer"}} onClick={() => {let ind = index; result[ind].skip = true;console.log(`Skip of track ${ind+1} registered!`)}}> {skip} </a></td>
+                      </tr>
+                  )
+              }
           });
       }
+      /*
       let copyIdiot = Array.isArray(this.state.album.Copyrights) && this.state.album.Copyrights.map((item, index) => {
           if (item.type === "P") {
               let shit = item.text.replace(/\(P\)/,"&#8471;")
               return <div key={index}>{ReactHtmlParser(shit)}</div>;
           } else return ''
       })
+       */
       let indexval = false;
+      let MBrelGr;
+      if (this.state.MB.releaseGroups){
+          MBrelGr = <div><span className="bold">MusicBrainz: </span><a href={`https://beta.musicbrainz.org/release-group/${this.state.MB.releaseGroups}`}>{this.state.MB.releaseGroups}</a></div>
+      }
 
       return (
           <div className="main-wrapper">
@@ -742,7 +825,7 @@ class SpotifyHandler extends React.Component {
                       <div className="bold"><h1>{this.state.album.Label} {qidAlbum}</h1></div>
                       <div>{P31} by {names}</div>
                       <div><span className="bold">Label: </span>{this.state.album.P264}</div>
-                      {copyIdiot}
+                      {MBrelGr}
                       <div><span className="bold">Release date: </span>{this.state.album.P577}</div>
                       <div><span className="bold">Barcode: </span><span
                           className="barcode">{this.state.album.Upc}</span>
@@ -763,7 +846,7 @@ class SpotifyHandler extends React.Component {
                   </table>
                   <div className="footer-button">
                       <button className="buttonWD" onClick={() => alert("Not implemented, yet!")}>Import to Wikidata</button>
-                      <button className="buttonQS" onClick={() => {this.generateQS([...result]); console.log(result) }}>{indexval ? 'Loading...' : 'QuickStatements (QS)'}</button>
+                      <button className="buttonQS" onClick={() => {this.generateQS([...result])}}>{indexval ? 'Loading...' : 'QuickStatements (QS)'}</button>
                   </div>
               </div>
           </div>
