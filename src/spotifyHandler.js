@@ -25,7 +25,7 @@ class SpotifyHandler extends React.Component {
     }
 
     async getAlbum2() {
-        const response = await fetch('https://api.allorigins.win/raw?url=https://tatsumo.pythonanywhere.com/api/album/'+this.props.page, { headers: { Accept: "application/json" } });
+        const response = await fetch('https://cors-anywhere.herokuapp.com/https://tatsumo.pythonanywhere.com/api/album/'+this.props.page, { headers: { 'content-Type': "text/javascript" } });
         const data = await response.json();
         this.setState({
             ...this.state,
@@ -261,11 +261,30 @@ class SpotifyHandler extends React.Component {
             }
             let mbGroup;
             if (result.MBindex !== -1 && this.state.MB.tracks[result.MBindex].title !== 'ⓧ') {
-                mbGroup = `P4404|"${this.state.MB.tracks[result.MBindex].id}"|P1810|"${this.state.MB.tracks[result.MBindex].title}"`
+                if (Array.isArray(this.state.MB.tracks[result.MBindex].isrcs) && this.state.MB.tracks[result.MBindex].isrcs[0] === isrc) mbGroup = `P4404|"${this.state.MB.tracks[result.MBindex].id}"|P1810|"${this.state.MB.tracks[result.MBindex].title}"|P4390|Q39893449`
+                else mbGroup = `P4404|"${this.state.MB.tracks[result.MBindex].id}"|P1810|"${this.state.MB.tracks[result.MBindex].title}"`
             }
 
+            let creativework = '';
+            let creativework2_69 = '';
+            let creativework2_39 = '';
+            if (this.state.wdAlbum.result.entities[this.props.qid].claims.P7937) {
+                let creative = this.state.wdAlbum.result.entities[this.props.qid].claims.P7937;
+                for (let b = 0; b < creative.length; b++){
+                    if (creative[b].mainsnak.datavalue.value.id === 'Q208569'){
+                        creativework += `||LAST|P1552|Q15975575`;
+                        creativework2_69 += `||${result.wdId}|P1552|Q15975575`;
+                    }
+                    else if (creative[b].mainsnak.datavalue.value.id === 'Q209939') {
+                        creativework += `||LAST|P1552|Q56123235`;
+                        creativework2_39 += `||${result.wdId}|P1552|Q56123235`;
+                    }
+                }
+            }
+            console.log("creativework!", creativework);
+
             if (result.wdId === "" && result.queryMatch === false) {
-                return `||CREATE||LAST|Len|"${name}"||LAST|Den|"${parseInt(year)} song by ${artistSpot}"||LAST|P31|${P31_1}||LAST|P1433|${this.props.qid}|P1545|"${result.nr}"|P577|${fullDate}${artistWD}||LAST|P2047|${Math.floor(this.state.album.Tracks[ind].duration_ms / 1000)}U11574|P518|${P437}||LAST|${mbGroup}||LAST|P1476|mul:"${name}"||LAST|P1243|"${isrc}"|P4390|Q39893449||LAST|P2207|"${spotTrack}"|P4390|Q39893449|P1810|"${this.state.album.Tracks[ind].name}"||LAST|P437|${P437}||${this.props.qid}|P658|LAST|P1545|"${result.nr}"`;
+                return `||CREATE||LAST|Len|"${name}"||LAST|Den|"${parseInt(year)} audio track by ${artistSpot}"||LAST|P31|${P31_1}||LAST|P1433|${this.props.qid}|P1545|"${result.nr}"|P577|${fullDate}${artistWD}||LAST|P2047|${Math.floor(this.state.album.Tracks[ind].duration_ms / 1000)}U11574|P518|${P437}${creativework}||LAST|${mbGroup}||LAST|P1476|mul:"${name}"||LAST|P1243|"${isrc}"|P4390|Q39893449||LAST|P2207|"${spotTrack}"|P4390|Q39893449|P1810|"${this.state.album.Tracks[ind].name}"||LAST|P437|${P437}||${this.props.qid}|P658|LAST|P1545|"${result.nr}"`;
             }
 
             let type = result.queryMatch ? querytrack.entities[result.wdId]?.claims : this.state.wdTrack.result.entities[result.wdId]?.claims;
@@ -375,6 +394,24 @@ class SpotifyHandler extends React.Component {
 
             if (!Array.isArray(type.P4404) && result.MBindex !== -1 && this.state.MB.tracks[result.MBindex].title !== 'ⓧ') {
                 trackBody += `||${result.wdId}|${mbGroup}`;
+            }
+
+            if (!Array.isArray(type.P1552) && creativework) {
+                creativework = creativework.replace(/LAST/gm,`${result.wdId}`)
+                trackBody += creativework
+            } else if (Array.isArray(type.P1552) && creativework) {
+                let foundme1 = false;
+                let foundme2 = false;
+                for (let e = 0; e < type.P1552.length; e++) {
+                    if (type.P1552[e].mainsnak.datavalue.value.id === 'Q15975575'){
+                        foundme1 = true;
+                    }
+                    else if (type.P1552[e].mainsnak.datavalue.value.id === 'Q56123235'){
+                        foundme2 = true;
+                    }
+                }
+                if (!foundme1) trackBody += creativework2_69;
+                if (!foundme2) trackBody += creativework2_39;
             }
 
             if (result.P1545 === 0) {
@@ -637,28 +674,40 @@ class SpotifyHandler extends React.Component {
     }
 
     async MusicBrainz () {
-        const title = encodeURIComponent(this.state.album.Label);
+        const title = encodeURIComponent(this.state.wdAlbum.result.entities[this.props.qid].labels.en.value);
         const artist1 = encodeURIComponent(this.state.album.P175[0].name);
         let url = `https://cors-anywhere.herokuapp.com/https://musicbrainz.org/ws/2/release-group/?query=release:${title}%20AND%20artist:${artist1}&fmt=json`;
         const response = await fetch(url);
         const data = await response.json();
-        if (Array.isArray(data["release-groups"]) && data["release-groups"].length > 0 && data["release-groups"][0].score === 100) {
-            const titleGr = data["release-groups"][0].title;
-            const releaseGroups = data["release-groups"][0].id;
-            let reid;
-            let found = false;
-            for (let o = 0; o < data["release-groups"][0].releases.length; o++){
-                if (data["release-groups"][0].releases[o].status === "Official"){
-                    found = true;
-                    reid = data["release-groups"][0].releases[o].id;
+        console.log(url)
+        console.log("data!", data);
+        let release = -1;
+        for (let h = 0; h < data["release-groups"].length; h++){
+            for (let u = 0; u < data["release-groups"][h].releases.length; u++) {
+                if (data["release-groups"][h].score > 97 && data["release-groups"][h].releases[0].status === 'Official') {
+                    release = h;
                     break;
                 }
             }
-            if (!found) reid = data["release-groups"][0].releases[0].id;
+            if (release !== -1) break;
+        }
+        if (release !== -1) {
+            const titleGr = data["release-groups"][release].title;
+            const releaseGroups = data["release-groups"][release].id;
+            let reid;
+            let found = false;
+            for (let o = 0; o < data["release-groups"][release].releases.length; o++){
+                if (data["release-groups"][release].releases[o].status === "Official"){
+                    found = true;
+                    reid = data["release-groups"][release].releases[o].id;
+                    break;
+                }
+            }
             const url2 = `https://cors-anywhere.herokuapp.com/https://musicbrainz.org/ws/2/recording/?query=reid:${reid}&fmt=json`;
             const response2 = await fetch(url2);
             const data2 = await response2.json();
-            if (data2.recordings.length === this.state.album.Tracks.length) {
+            console.log("data2!", data2);
+            if (data2.recordings.length > this.state.album.Tracks.length - 5) {
                 this.setState({
                     ...this.state,
                     MB: {Loading: false, releaseGroups: releaseGroups, titleGr: titleGr, tracks: data2.recordings}
@@ -670,6 +719,18 @@ class SpotifyHandler extends React.Component {
             ...this.state,
             MB: {Loading: false, releaseGroups: '', tracks: []}
         });
+    }
+
+    regexName (inputName) {
+        let name = inputName;
+        if (!inputName.match(/\s-\s(?=[^-]*$).*[R|r]emix/g)) name = inputName.replace(/\s-\s(?=[^-]*$).*/g,'');
+        name = name.replace(/ *\([f|F]eat[^)]*\) */g,'');
+        name = name.replace(/ *\([w|W]ith[^)]*\) */g,'');
+        name = name.replace(/ *\([m|M]ed[^)]*\) */g,'');
+        name = name.replace(/ *\([i|I]nterlude[^)]*\) */g,'');
+        if (name === '') name = inputName;
+        name = name.replace(/'/g,"’");
+        return name;
     }
 
     onUpdateItem = i => {
@@ -779,7 +840,7 @@ class SpotifyHandler extends React.Component {
               }
               let MBindex = -1;
               for (let z = 0; z < this.state.MB.tracks.length; z++) {
-                  if ((Array.isArray(this.state.MB.tracks[z].isrcs) && this.state.MB.tracks[z].isrcs[0] === this.state.album.Tracks2[index].isrc) || item.name.toLowerCase() === this.state.MB.tracks[z].title.toLowerCase()) {
+                  if ((Array.isArray(this.state.MB.tracks[z].isrcs) && this.state.MB.tracks[z].isrcs[0] === this.state.album.Tracks2[index].isrc) || this.regexName(item.name).toLowerCase() === this.state.MB.tracks[z].title.toLowerCase()) {
                       MBindex = z;
                       break;
                   }
@@ -824,6 +885,14 @@ class SpotifyHandler extends React.Component {
       if (this.state.MB.releaseGroups){
           MBrelGr = <div><span className="bold">MusicBrainz: </span><a href={`https://beta.musicbrainz.org/release-group/${this.state.MB.releaseGroups}`}>{this.state.MB.releaseGroups}</a></div>
       }
+      let relDate;
+
+      if (this.state.album.P577){
+          let options = { year: 'numeric', month: 'long', day: 'numeric' };
+          let d = new Date(this.state.album.P577);
+          relDate = d.toLocaleDateString("en-US", options);
+      }
+
 
       return (
           <div className="main-wrapper">
@@ -834,7 +903,7 @@ class SpotifyHandler extends React.Component {
                       <div>{P31} by {names}</div>
                       <div><span className="bold">Label: </span>{this.state.album.P264}</div>
                       {MBrelGr}
-                      <div><span className="bold">Release date: </span>{this.state.album.P577}</div>
+                      <div><span className="bold">Release date: </span>{relDate}</div>
                       <div><span className="bold">Barcode: </span><span
                           className="barcode">{this.state.album.Upc}</span>
                       </div>
