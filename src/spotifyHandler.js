@@ -25,7 +25,8 @@ class SpotifyHandler extends React.Component {
     }
 
     async getAlbum2() {
-        const response = await fetch('https://cors-anywhere.herokuapp.com/https://tatsumo.pythonanywhere.com/api/album/'+this.props.page, { headers: { 'content-Type': "text/javascript" } });
+        const response = await fetch('https://moedata.toolforge.org/tatsumo/api/album/'+this.props.page, { headers: { 'content-Type': "text/javascript" } });
+        //const response = await fetch('https://cors-anywhere.herokuapp.com/https://tatsumo.pythonanywhere.com/api/album/'+this.props.page, { headers: { 'content-Type': "text/javascript" } });
         const data = await response.json();
         this.setState({
             ...this.state,
@@ -110,7 +111,7 @@ class SpotifyHandler extends React.Component {
                             return (index ? '|' : '') + item.mainsnak.datavalue.value.id;
                 });
                 artists = artists.join('');
-                const WDAPI2 = `https://cors-anywhere.herokuapp.com/https://www.wikidata.org/w/api.php?action=wbgetentities&format=json&props=labels&languages=en&ids=${artists}`;
+                const WDAPI2 = `https://www.wikidata.org/w/api.php?action=wbgetentities&format=json&props=labels&languages=en&ids=${artists}&origin=*`;
                 const response = await fetch(WDAPI2);
                 const result = await response.json(); //husk endre Loading!!
                 this.setState({
@@ -144,7 +145,7 @@ class SpotifyHandler extends React.Component {
                     return (index ? '|' : '') + item.mainsnak.datavalue.value.id;
                 })
                 tracks = tracks.join('');
-                const WDAPI3 = `https://cors-anywhere.herokuapp.com/https://www.wikidata.org/w/api.php?action=wbgetentities&props=aliases|labels|claims&languages=en&redirects=no&format=json&ids=${tracks}`;
+                const WDAPI3 = `https://www.wikidata.org/w/api.php?action=wbgetentities&props=aliases|labels|claims&languages=en&redirects=no&format=json&ids=${tracks}&origin=*`;
                 const response = await fetch(WDAPI3);
                 const result = await response.json();
                   this.setState( {
@@ -178,7 +179,7 @@ class SpotifyHandler extends React.Component {
 
     async getWDAlbum() {
         if (this.props.qid) {
-            const WDAPI = `https://cors-anywhere.herokuapp.com/https://www.wikidata.org/w/api.php?action=wbgetentities&props=aliases|labels|claims&languages=en&redirects=no&format=json&ids=${this.props.qid}`;
+            const WDAPI = `https://www.wikidata.org/w/api.php?action=wbgetentities&props=aliases|labels|claims&languages=en&redirects=no&format=json&ids=${this.props.qid}&origin=*`;
             const response = await fetch(WDAPI);
             const result = await response.json();
             this.setState({
@@ -194,19 +195,9 @@ class SpotifyHandler extends React.Component {
     }
 
     async getSelectedAlbum(album) {
-        const WDAPI3 = `https://cors-anywhere.herokuapp.com/https://www.wikidata.org/w/api.php?action=wbgetentities&props=aliases|labels|claims&languages=en&redirects=no&format=json&ids=${album}`;
+        const WDAPI3 = `https://www.wikidata.org/w/api.php?action=wbgetentities&props=aliases|labels|claims&languages=en&redirects=no&format=json&ids=${album}&origin=*`;
         const response = await fetch(WDAPI3);
         return await response.json();
-    }
-
-    regexName2 (sendval) {
-        let name = sendval.replace(/\s-\s(?=[^-]*$).*/g,'');
-        name = name.replace(/ *\([f|F]eat[^)]*\) */g,'');
-        name = name.replace(/ *\([w|W]ith[^)]*\) */g,'');
-        name = name.replace(/ *\([m|M]ed[^)]*\) */g,'');
-        name = name.replace(/ *\([i|I]nterlude[^)]*\) */g,'');
-        if (name === '') name = sendval;
-        return name
     }
 
     QSitem(result, querytrack) {
@@ -251,6 +242,7 @@ class SpotifyHandler extends React.Component {
             let name = this.state.album.Tracks[ind].name;
             if (!this.state.album.Tracks[ind].name.match(/\s-\s(?=[^-]*$).*[R|r]emix/g)) name = this.state.album.Tracks[ind].name.replace(/\s-\s(?=[^-]*$).*/g,'');
             name = name.replace(/ *\([f|F]eat[^)]*\) */g,'');
+            name = name.replace(/ *\([f|F]t.[^)]*\) */g,'');
             name = name.replace(/ *\([w|W]ith[^)]*\) */g,'');
             name = name.replace(/ *\([m|M]ed[^)]*\) */g,'');
             name = name.replace(/ *\([i|I]nterlude[^)]*\) */g,'');
@@ -674,22 +666,24 @@ class SpotifyHandler extends React.Component {
 
     async MusicBrainz () {
         let url;
-        if (this.state.wdAlbum.result.entities[this.props.qid].claims.P436) {
+        if (this.props.qid && this.state.wdAlbum.result.entities[this.props.qid].claims?.P436) {
             const relID = encodeURIComponent(this.state.wdAlbum.result.entities[this.props.qid].claims.P436[0].mainsnak.datavalue.value)
-            url = `https://musicbrainz.org/ws/2/release-group/?query=rgid:${relID}&fmt=json`;
+            url = `https://moedata.toolforge.org/musicbrainz/ws/2/release-group/?query=rgid:${relID}&fmt=json`;
         } else {
             let title;
-            if (this.state.wdAlbum.result.entities[this.props.qid].labels?.en?.value) title = encodeURIComponent(this.state.wdAlbum.result.entities[this.props.qid].labels.en.value);
+            if (this.props.qid && this.state.wdAlbum.result.entities[this.props.qid].labels?.en?.value) title = encodeURIComponent(this.state.wdAlbum.result.entities[this.props.qid].labels.en.value);
             else title = encodeURIComponent(this.state.album.Label);
             const artist1 = encodeURIComponent(this.state.album.P175[0].name);
-            url = `https://musicbrainz.org/ws/2/release-group/?query=release:${title}%20AND%20artist:${artist1}&fmt=json`;
+            url = `https://moedata.toolforge.org/musicbrainz/ws/2/release-group/?query=release:${title}%20AND%20artist:${artist1}&fmt=json`;
         }
+        //console.log("URL:", url);
         const response = await fetch(url);
         const data = await response.json();
+        //console.log("data:", data);
         let release = -1;
         for (let h = 0; h < data["release-groups"].length; h++) {
             for (let u = 0; u < data["release-groups"][h].releases.length; u++) {
-                if (data["release-groups"][h].score > 97 && data["release-groups"][h].releases[0].status === 'Official') {
+                if (data["release-groups"][h].score > 97 && data["release-groups"][h].releases[u].status === 'Official') {
                     release = h;
                     break;
                 }
@@ -708,9 +702,11 @@ class SpotifyHandler extends React.Component {
                     break;
                 }
             }
-            const url2 = `https://musicbrainz.org/ws/2/recording/?query=reid:${reid}&fmt=json`;
+            const url2 = `https://moedata.toolforge.org/musicbrainz/ws/2/recording/?query=reid:${reid}&fmt=json`;
+            //console.log("URL2:", url2);
             const response2 = await fetch(url2);
             const data2 = await response2.json();
+            //console.log("data2:", data2);
             if (data2.recordings.length > this.state.album.Tracks.length - 5) {
                 this.setState({
                     ...this.state,
@@ -729,6 +725,7 @@ class SpotifyHandler extends React.Component {
         let name = inputName;
         if (!inputName.match(/\s-\s(?=[^-]*$).*[R|r]emix/g)) name = inputName.replace(/\s-\s(?=[^-]*$).*/g,'');
         name = name.replace(/ *\([f|F]eat[^)]*\) */g,'');
+        name = name.replace(/ *\([f|F]t.[^)]*\) */g,'');
         name = name.replace(/ *\([w|W]ith[^)]*\) */g,'');
         name = name.replace(/ *\([m|M]ed[^)]*\) */g,'');
         name = name.replace(/ *\([i|I]nterlude[^)]*\) */g,'');
@@ -787,7 +784,7 @@ class SpotifyHandler extends React.Component {
           if (Array.isArray(wdArtist) && wdArtist.length) {
               for (let q = 0; q < wdArtist.length; q++) {
                   for (let w = 0; w < wdArtist[q].value.length; w++) {
-                      if (wdArtist[q].value[w].toLowerCase() === this.regexName2(item.name).toLowerCase()) {
+                      if (wdArtist[q].value[w].toLowerCase() === this.regexName(item.name).toLowerCase()) {
                           artistqid = wdArtist[q].id
                           break;
                       }
@@ -896,12 +893,16 @@ class SpotifyHandler extends React.Component {
           let d = new Date(this.state.album.P577);
           relDate = d.toLocaleDateString("en-US", options);
       }
+      let albumart = "https://upload.wikimedia.org/wikipedia/commons/thumb/5/50/Breezeicons-actions-22-media-album-track.svg/500px-Breezeicons-actions-22-media-album-track.svg.png";
+      if (this.state.album.albumArt) {
+          albumart = "https://moedata.toolforge.org/scdn/" + this.state.album.albumArt.replace(/https:\/\/i\.scdn\.co\//g,'');
+      }
 
 
       return (
           <div className="main-wrapper">
               <div className="album-summary">
-                  <img className="album-cover" src={this.state.album.albumArt} alt="Album cover"/>
+                  <img className="album-cover" src={albumart} alt="Album cover"/>
                   <div className="album-metadata">
                       <div className="bold"><h1>{this.state.album.Label} {qidAlbum}</h1></div>
                       <div>{P31} by {names}</div>
