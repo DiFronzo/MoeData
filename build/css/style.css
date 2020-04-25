@@ -234,15 +234,13 @@ button:hover{
 
 .footerWrap {
     width:100%;
-    position: center;
     bottom: 0;
-    z-index: 3;
-    display: inline-block;
 }
 
 .footer {
     width:150px;
     margin:auto;
+    display: inline-block;
     position: relative;
     z-index: 3;
 }

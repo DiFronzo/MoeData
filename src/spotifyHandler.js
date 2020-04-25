@@ -212,7 +212,7 @@ class SpotifyHandler extends React.Component {
     QSitem(result, querytrack) {
         if (Array.isArray(this.state.wdAlbum.result.entities[this.props.qid].claims?.P175)) {
             let ind = result.nr - 1;
-            let fullDate = this.state.album.P577 + "TT00:00:00Z/11";
+            let fullDate =  "+" + this.state.album.P577 + "T00:00:00Z/11";
             let year,
                 month,
                 day;
@@ -226,7 +226,7 @@ class SpotifyHandler extends React.Component {
                 tempDate = tempDate.replace(/T00.*/,'');
                 [year, month, day] = tempDate.split('-');
             } else [year, month, day] = this.state.album.P577.split('-')
-            if (typeof month == 'undefined') fullDate = this.state.album.P577 + "TT00:00:00Z/9";
+            if (typeof month == 'undefined') fullDate = "+" + this.state.album.P577 + "T00:00:00Z/9";
             let trackBody;
 
             let artistSpot = this.state.album.P175.map((item, index) => {
@@ -281,7 +281,6 @@ class SpotifyHandler extends React.Component {
                     }
                 }
             }
-            console.log("creativework!", creativework);
 
             if (result.wdId === "" && result.queryMatch === false) {
                 return `||CREATE||LAST|Len|"${name}"||LAST|Den|"${parseInt(year)} audio track by ${artistSpot}"||LAST|P31|${P31_1}||LAST|P1433|${this.props.qid}|P1545|"${result.nr}"|P577|${fullDate}${artistWD}||LAST|P2047|${Math.floor(this.state.album.Tracks[ind].duration_ms / 1000)}U11574|P518|${P437}${creativework}||LAST|${mbGroup}||LAST|P1476|mul:"${name}"||LAST|P1243|"${isrc}"|P4390|Q39893449||LAST|P2207|"${spotTrack}"|P4390|Q39893449|P1810|"${this.state.album.Tracks[ind].name}"||LAST|P437|${P437}||${this.props.qid}|P658|LAST|P1545|"${result.nr}"`;
@@ -674,15 +673,21 @@ class SpotifyHandler extends React.Component {
     }
 
     async MusicBrainz () {
-        const title = encodeURIComponent(this.state.wdAlbum.result.entities[this.props.qid].labels.en.value);
-        const artist1 = encodeURIComponent(this.state.album.P175[0].name);
-        let url = `https://cors-anywhere.herokuapp.com/https://musicbrainz.org/ws/2/release-group/?query=release:${title}%20AND%20artist:${artist1}&fmt=json`;
+        let url;
+        if (this.state.wdAlbum.result.entities[this.props.qid].claims.P436) {
+            const relID = encodeURIComponent(this.state.wdAlbum.result.entities[this.props.qid].claims.P436[0].mainsnak.datavalue.value)
+            url = `https://musicbrainz.org/ws/2/release-group/?query=rgid:${relID}&fmt=json`;
+        } else {
+            let title;
+            if (this.state.wdAlbum.result.entities[this.props.qid].labels?.en?.value) title = encodeURIComponent(this.state.wdAlbum.result.entities[this.props.qid].labels.en.value);
+            else title = encodeURIComponent(this.state.album.Label);
+            const artist1 = encodeURIComponent(this.state.album.P175[0].name);
+            url = `https://musicbrainz.org/ws/2/release-group/?query=release:${title}%20AND%20artist:${artist1}&fmt=json`;
+        }
         const response = await fetch(url);
         const data = await response.json();
-        console.log(url)
-        console.log("data!", data);
         let release = -1;
-        for (let h = 0; h < data["release-groups"].length; h++){
+        for (let h = 0; h < data["release-groups"].length; h++) {
             for (let u = 0; u < data["release-groups"][h].releases.length; u++) {
                 if (data["release-groups"][h].score > 97 && data["release-groups"][h].releases[0].status === 'Official') {
                     release = h;
@@ -696,17 +701,16 @@ class SpotifyHandler extends React.Component {
             const releaseGroups = data["release-groups"][release].id;
             let reid;
             let found = false;
-            for (let o = 0; o < data["release-groups"][release].releases.length; o++){
-                if (data["release-groups"][release].releases[o].status === "Official"){
+            for (let o = 0; o < data["release-groups"][release].releases.length; o++) {
+                if (data["release-groups"][release].releases[o].status === "Official") {
                     found = true;
                     reid = data["release-groups"][release].releases[o].id;
                     break;
                 }
             }
-            const url2 = `https://cors-anywhere.herokuapp.com/https://musicbrainz.org/ws/2/recording/?query=reid:${reid}&fmt=json`;
+            const url2 = `https://musicbrainz.org/ws/2/recording/?query=reid:${reid}&fmt=json`;
             const response2 = await fetch(url2);
             const data2 = await response2.json();
-            console.log("data2!", data2);
             if (data2.recordings.length > this.state.album.Tracks.length - 5) {
                 this.setState({
                     ...this.state,
@@ -729,7 +733,7 @@ class SpotifyHandler extends React.Component {
         name = name.replace(/ *\([m|M]ed[^)]*\) */g,'');
         name = name.replace(/ *\([i|I]nterlude[^)]*\) */g,'');
         if (name === '') name = inputName;
-        name = name.replace(/'/g,"’");
+        name = name.replace(/[^a-zA-Z0-9 ]/g,"");
         return name;
     }
 
@@ -840,7 +844,7 @@ class SpotifyHandler extends React.Component {
               }
               let MBindex = -1;
               for (let z = 0; z < this.state.MB.tracks.length; z++) {
-                  if ((Array.isArray(this.state.MB.tracks[z].isrcs) && this.state.MB.tracks[z].isrcs[0] === this.state.album.Tracks2[index].isrc) || this.regexName(item.name).toLowerCase() === this.state.MB.tracks[z].title.toLowerCase()) {
+                  if ((Array.isArray(this.state.MB.tracks[z].isrcs) && this.state.MB.tracks[z].isrcs[0] === this.state.album.Tracks2[index].isrc) || this.regexName(item.name).toLowerCase() === this.state.MB.tracks[z].title.replace(/[^a-zA-Z0-9 ]/g,"").toLowerCase()) {
                       MBindex = z;
                       break;
                   }
