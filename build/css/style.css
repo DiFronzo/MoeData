@@ -22,6 +22,7 @@ body {
 svg {
   display: block;
 }
+
 .logo {
   fill: #fff;
 }
@@ -61,7 +62,7 @@ table {
 }
 
 table tr td {
-    padding: 3px;
+    padding: 1px;
 }
 
 div.small {
@@ -110,7 +111,7 @@ a:link div, a:visited div {
     width: 94%;
     align-items:center;
     border-collapse:separate;
-    border-spacing:15px 0;
+    border-spacing:16px 0;
     /*
     width:94%;
 
@@ -201,7 +202,7 @@ tr:first-child td {
     border-radius: 20px;
     display: inline-block;
     text-align: left;
-    max-width: 1300px;
+    max-width: 1450px;
     position: relative;
     z-index:3;
 }
@@ -225,7 +226,6 @@ tr:first-child td {
 
 button {
   margin:auto;
-  display:block;
 }
 
 button:hover{
@@ -233,7 +233,7 @@ button:hover{
 }
 
 .footerWrap {
-    width:100%;
+    width:95%;
     bottom: 0;
 }
 
@@ -241,7 +241,6 @@ button:hover{
     width:150px;
     margin:auto;
     display: inline-block;
-    position: relative;
     z-index: 3;
 }
 .footerContent {

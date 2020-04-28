@@ -1,5 +1,7 @@
 import React from "react";
 import MyLoader from "./Loader";
+import SvgMB from "./SvgMB";
+import ImgLoader from "./ImgLoader";
 
 class SpotifyHandler extends React.Component {
     constructor(props) {
@@ -25,8 +27,8 @@ class SpotifyHandler extends React.Component {
     }
 
     async getAlbum2() {
-        const response = await fetch('https://moedata.toolforge.org/tatsumo/api/album/'+this.props.page, { headers: { 'content-Type': "text/javascript" } });
-        //const response = await fetch('https://cors-anywhere.herokuapp.com/https://tatsumo.pythonanywhere.com/api/album/'+this.props.page, { headers: { 'content-Type': "text/javascript" } });
+        //const response = await fetch('https://moedata.toolforge.org/tatsumo/api/album/'+this.props.page, { headers: { 'content-Type': "text/javascript" } });
+        const response = await fetch('https://cors-anywhere.herokuapp.com/https://tatsumo.pythonanywhere.com/api/album/'+this.props.page, { headers: { 'content-Type': "text/javascript" } });
         const data = await response.json();
         this.setState({
             ...this.state,
@@ -253,7 +255,7 @@ class SpotifyHandler extends React.Component {
             }
             let mbGroup;
             if (result.MBindex !== -1 && this.state.MB.tracks[result.MBindex].title !== 'ⓧ') {
-                if (Array.isArray(this.state.MB.tracks[result.MBindex].isrcs) && this.state.MB.tracks[result.MBindex].isrcs[0] === isrc) mbGroup = `P4404|"${this.state.MB.tracks[result.MBindex].id}"|P1810|"${this.state.MB.tracks[result.MBindex].title}"|P4390|Q39893449`
+                if (Array.isArray(this.state.MB.tracks[result.MBindex].recording.isrcs) && this.state.MB.tracks[result.MBindex].recording.isrcs[0] === isrc) mbGroup = `P4404|"${this.state.MB.tracks[result.MBindex].id}"|P1810|"${this.state.MB.tracks[result.MBindex].title}"|P4390|Q39893449`
                 else mbGroup = `P4404|"${this.state.MB.tracks[result.MBindex].id}"|P1810|"${this.state.MB.tracks[result.MBindex].title}"`
             }
 
@@ -668,22 +670,22 @@ class SpotifyHandler extends React.Component {
         let url;
         if (this.props.qid && this.state.wdAlbum.result.entities[this.props.qid].claims?.P436) {
             const relID = encodeURIComponent(this.state.wdAlbum.result.entities[this.props.qid].claims.P436[0].mainsnak.datavalue.value)
-            url = `https://moedata.toolforge.org/musicbrainz/ws/2/release-group/?query=rgid:${relID}&fmt=json`;
+            url = `https://moedata.toolforge.org/musicbrainz/ws/2/release-group/?query=rgid:${relID}%20AND%20status:official&fmt=json`;
         } else {
             let title;
             if (this.props.qid && this.state.wdAlbum.result.entities[this.props.qid].labels?.en?.value) title = encodeURIComponent(this.state.wdAlbum.result.entities[this.props.qid].labels.en.value);
             else title = encodeURIComponent(this.state.album.Label);
             const artist1 = encodeURIComponent(this.state.album.P175[0].name);
-            url = `https://moedata.toolforge.org/musicbrainz/ws/2/release-group/?query=release:${title}%20AND%20artist:${artist1}&fmt=json`;
+            url = `https://moedata.toolforge.org/musicbrainz/ws/2/release-group/?query=release:${title}%20AND%20artist:${artist1}}%20AND%20status:official&fmt=json`;
         }
         //console.log("URL:", url);
         const response = await fetch(url);
         const data = await response.json();
-        //console.log("data:", data);
+        console.log("data:", data);
         let release = -1;
         for (let h = 0; h < data["release-groups"].length; h++) {
             for (let u = 0; u < data["release-groups"][h].releases.length; u++) {
-                if (data["release-groups"][h].score > 97 && data["release-groups"][h].releases[u].status === 'Official') {
+                if (data["release-groups"][h].score > 97) {
                     release = h;
                     break;
                 }
@@ -691,26 +693,28 @@ class SpotifyHandler extends React.Component {
             if (release !== -1) break;
         }
         if (release !== -1) {
-            const titleGr = data["release-groups"][release].title;
             const releaseGroups = data["release-groups"][release].id;
             let reid;
             let found = false;
             for (let o = 0; o < data["release-groups"][release].releases.length; o++) {
-                if (data["release-groups"][release].releases[o].status === "Official") {
+                if (data["release-groups"][release].releases[o].title.toLowerCase() === this.state.album.Label.toLowerCase()) {
                     found = true;
                     reid = data["release-groups"][release].releases[o].id;
                     break;
                 }
             }
-            const url2 = `https://moedata.toolforge.org/musicbrainz/ws/2/recording/?query=reid:${reid}&fmt=json`;
+            if (!found) {
+                reid = data["release-groups"][release].releases[0].id;
+            }
+            const url2 = `https://moedata.toolforge.org/musicbrainz/ws/2/release/${reid}?inc=recordings+isrcs&fmt=json`;
             //console.log("URL2:", url2);
             const response2 = await fetch(url2);
             const data2 = await response2.json();
-            //console.log("data2:", data2);
-            if (data2.recordings.length > this.state.album.Tracks.length - 5) {
+            console.log("data2:", data2);
+            if (data2.media[0]['track-count'] > this.state.album.Tracks.length - 3) {
                 this.setState({
                     ...this.state,
-                    MB: {Loading: false, releaseGroups: releaseGroups, titleGr: titleGr, tracks: data2.recordings}
+                    MB: {Loading: false, releaseGroups: releaseGroups, titleGr: data2.title, trackNr: data2.media[0]['track-count'], tracks: data2.media[0].tracks}
                 })
                 return "";
             }
@@ -754,6 +758,7 @@ class SpotifyHandler extends React.Component {
       //setTimeout(() => { if (this.state.album.P2635 === 0) return <Redirect to={{pathname: "/404"}}/>; }, 4000);
 
       const MaaLoader = () => <MyLoader/>;
+      const imgload = () => <ImgLoader/>;
 
       let qidAlbum;
       if (this.props.qid) {
@@ -840,12 +845,22 @@ class SpotifyHandler extends React.Component {
                   wdStatus = <a style={{fontSize: "16px", display: "inline-block"}} href={`https://www.wikidata.org/wiki/${wdmatch.id}`}>{wdmatch.label} <span className="barcode">({wdmatch.queryMatch ? "*" : ''}{wdmatch.id})</span></a>;
               }
               let MBindex = -1;
-              for (let z = 0; z < this.state.MB.tracks.length; z++) {
-                  if ((Array.isArray(this.state.MB.tracks[z].isrcs) && this.state.MB.tracks[z].isrcs[0] === this.state.album.Tracks2[index].isrc) || this.regexName(item.name).toLowerCase() === this.state.MB.tracks[z].title.replace(/[^a-zA-Z0-9 ]/g,"").toLowerCase()) {
-                      MBindex = z;
-                      break;
+              if (this.state.MB.trackNr === this.state.album.Tracks.length){
+                  for (let z = 0; z < this.state.MB.tracks.length; z++) {
+                      if (this.state.MB.tracks[z].position === index + 1){
+                          MBindex = z;
+                          break;
+                      }
                   }
-              }
+              } else {
+                  for (let z = 0; z < this.state.MB.tracks.length; z++) {
+                      if ( this.regexName(item.name).toLowerCase() === this.state.MB.tracks[z].recording.title.replace(/[^a-zA-Z0-9 ]/g,"").toLowerCase()) {
+                        MBindex = z;
+                        break;
+                      }
+                  }
+              } //(Array.isArray(this.state.MB.tracks[z].recording.isrcs) && this.state.MB.tracks[z].recording.isrcs[0] === this.state.album.Tracks2[index].isrc) ||
+
 
               if (!this.state.MB.Loading) {
                   if (this.props.qid) {
@@ -863,7 +878,7 @@ class SpotifyHandler extends React.Component {
                           <td className="isrc">{this.state.album.Tracks2[index].isrc}</td>
                           <td>{result[index].minutes}</td>
                           <td>{this.state.MB.tracks[MBindex] ?
-                              <div><a href={`https://beta.musicbrainz.org/recording/${this.state.MB.tracks[MBindex].id}`}>"{this.state.MB.tracks[MBindex].title}"</a> <a style={{display: "inline-block", cursor: "pointer"}} onClick={() => {
+                              <div><a href={`https://beta.musicbrainz.org/recording/${this.state.MB.tracks[MBindex].recording.id}`}>"{this.state.MB.tracks[MBindex].title}"</a> <a style={{display: "inline-block", cursor: "pointer"}} onClick={() => {
                                   this.onUpdateItem(MBindex);
                                   console.log(`Removed match to MB track registered!`)
                               }}>{stop}</a></div> : "ⓧ"}</td>
@@ -873,6 +888,7 @@ class SpotifyHandler extends React.Component {
               }
           });
       }
+
       /*
       let copyIdiot = Array.isArray(this.state.album.Copyrights) && this.state.album.Copyrights.map((item, index) => {
           if (item.type === "P") {
@@ -884,7 +900,7 @@ class SpotifyHandler extends React.Component {
       let indexval = false;
       let MBrelGr;
       if (this.state.MB.releaseGroups){
-          MBrelGr = <div><span className="bold">MusicBrainz: </span><a href={`https://beta.musicbrainz.org/release-group/${this.state.MB.releaseGroups}`}>{this.state.MB.releaseGroups}</a></div>
+          MBrelGr = <div><span className="bold">MusicBrainz: </span>{this.state.MB.releaseGroups}<a className={"logo-icon"} style={{display: "inline-block", cursor: "pointer"}} href={`https://beta.musicbrainz.org/release-group/${this.state.MB.releaseGroups}`} ><SvgMB /> </a></div>;
       }
       let relDate;
 
@@ -895,7 +911,7 @@ class SpotifyHandler extends React.Component {
       }
       let albumart = "https://upload.wikimedia.org/wikipedia/commons/thumb/5/50/Breezeicons-actions-22-media-album-track.svg/500px-Breezeicons-actions-22-media-album-track.svg.png";
       if (this.state.album.albumArt) {
-          albumart = "https://moedata.toolforge.org/scdn/" + this.state.album.albumArt.replace(/https:\/\/i\.scdn\.co\//g,'');
+          albumart = "https://moedata.toolforge.org/scdn/" + this.state.album.albumArt.replace(/https:\/\/i\.scdn\.co\//g,'')
       }
 
 
