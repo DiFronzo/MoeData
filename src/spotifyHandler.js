@@ -27,8 +27,8 @@ class SpotifyHandler extends React.Component {
     }
 
     async getAlbum2() {
-        //const response = await fetch('https://moedata.toolforge.org/tatsumo/api/album/'+this.props.page, { headers: { 'content-Type': "text/javascript" } });
-        const response = await fetch('https://cors-anywhere.herokuapp.com/https://tatsumo.pythonanywhere.com/api/album/'+this.props.page, { headers: { 'content-Type': "text/javascript" } });
+        const response = await fetch('https://moedata.toolforge.org/tatsumo/api/album/'+this.props.page, { headers: { 'content-Type': "text/javascript" } });
+        //const response = await fetch('https://cors-anywhere.herokuapp.com/https://tatsumo.pythonanywhere.com/api/album/'+this.props.page, { headers: { 'content-Type': "text/javascript" } });
         const data = await response.json();
         this.setState({
             ...this.state,
@@ -255,8 +255,8 @@ class SpotifyHandler extends React.Component {
             }
             let mbGroup;
             if (result.MBindex !== -1 && this.state.MB.tracks[result.MBindex].title !== 'ⓧ') {
-                if (Array.isArray(this.state.MB.tracks[result.MBindex].recording.isrcs) && this.state.MB.tracks[result.MBindex].recording.isrcs[0] === isrc) mbGroup = `P4404|"${this.state.MB.tracks[result.MBindex].id}"|P1810|"${this.state.MB.tracks[result.MBindex].title}"|P4390|Q39893449`
-                else mbGroup = `P4404|"${this.state.MB.tracks[result.MBindex].id}"|P1810|"${this.state.MB.tracks[result.MBindex].title}"`
+                if (Array.isArray(this.state.MB.tracks[result.MBindex].recording.isrcs) && this.state.MB.tracks[result.MBindex].recording.isrcs[0] === isrc) mbGroup = `P4404|"${this.state.MB.tracks[result.MBindex].recording.id}"|P1810|"${this.state.MB.tracks[result.MBindex].recording.title}"|P4390|Q39893449`
+                else mbGroup = `P4404|"${this.state.MB.tracks[result.MBindex].recording.id}"|P1810|"${this.state.MB.tracks[result.MBindex].recording.title}"`
             }
 
             let creativework = '';
