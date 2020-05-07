@@ -2,6 +2,8 @@ import React from "react";
 import MyLoader from "./Loader";
 import SvgMB from "./SvgMB";
 import ImgLoader from "./ImgLoader";
+import SelectSearch from "react-select-search";
+
 
 class SpotifyHandler extends React.Component {
     constructor(props) {
@@ -14,8 +16,11 @@ class SpotifyHandler extends React.Component {
           wdLabel: {Loading: true, result: {entities: { wdId: {labels: {en: { value: '' } } } } } }, //artist label!!!
           wdTrack: {Loading: true, result: {entities: {} } },
           wdQuery: {Loading: true, result: '' },
-          MB: {Loading: true, releaseGroups: '', tracks: [] }
+          MB: {Loading: true, releaseGroups: '', tracks: [] },
+          lang: {result: ''},
+          langPicked: 'en'
       };
+      this.onUpdateItem = this.onUpdateItem.bind(this);
     }
 
     async componentDidMount() {
@@ -23,6 +28,7 @@ class SpotifyHandler extends React.Component {
         await this.getWDAlbum();
         await this.getWDInfo();
         await this.getWDQuery();
+        await this.getWDLang();
         await this.MusicBrainz();
     }
 
@@ -49,6 +55,32 @@ class SpotifyHandler extends React.Component {
                 Tracks2: data.tracks
             }
         });
+    }
+
+    async getWDLang() {
+        if (this.state.wdLabel.Loading === false && this.props.qid) {
+            const endpointUrl = 'https://query.wikidata.org/sparql';
+            const sparqlQuery = `SELECT ?c
+                        (CONCAT(?c," - ",?itemLabel) as ?display)
+                        {
+                          ?item wdt:P424 ?c .
+                          MINUS{?item wdt:P31/wdt:P279* wd:Q14827288} #exclude Wikimedia projects
+                          MINUS{?item wdt:P31/wdt:P279* wd:Q17442446} #exclude Wikimedia internal stuff
+                         SERVICE wikibase:label { bd:serviceParam wikibase:language "en" . ?item rdfs:label ?itemLabel }
+                        }
+                        ORDER BY ?c`;
+            const fullUrl = endpointUrl + '?query=' + encodeURIComponent( sparqlQuery );
+            const requestOptions = {
+                headers: { 'Accept': 'application/sparql-results+json' }
+            };
+            const response = await fetch(fullUrl, requestOptions);
+            const result = await response.json();
+            this.setState({
+                lang: {
+                    result
+                }
+            })
+        }
     }
 
     async getWDQuery() {
@@ -219,7 +251,9 @@ class SpotifyHandler extends React.Component {
                 tempDate = tempDate.replace(/T00.*/,'');
                 [year, month, day] = tempDate.split('-');
             } else [year, month, day] = this.state.album.P577.split('-')
-            if (typeof month == 'undefined') fullDate = "+" + this.state.album.P577 + "T00:00:00Z/9";
+            if (typeof month == 'undefined') fullDate = "+" + year + "-00-00T00:00:00Z/9";
+            else if (month == '01' && day == '01') fullDate = "+" + year + "-00-00T00:00:00Z/9";
+            else if (!month && !day) fullDate = "+" + year + "-00-00T00:00:00Z/9";
             let trackBody;
 
             let artistSpot = this.state.album.P175.map((item, index) => {
@@ -254,7 +288,7 @@ class SpotifyHandler extends React.Component {
                 name = name.replace(/(^\w{1})|(\s{1}\w{1})/g, match => match.toUpperCase());
             }
             let mbGroup;
-            if (result.MBindex !== -1 && this.state.MB.tracks[result.MBindex].title !== 'ⓧ') {
+            if (result.MBindex !== -1 && this.state.MB.tracks[result.MBindex].recording.title !== 'ⓧ') {
                 if (Array.isArray(this.state.MB.tracks[result.MBindex].recording.isrcs) && this.state.MB.tracks[result.MBindex].recording.isrcs[0] === isrc) mbGroup = `P4404|"${this.state.MB.tracks[result.MBindex].recording.id}"|P1810|"${this.state.MB.tracks[result.MBindex].recording.title}"|P4390|Q39893449`
                 else mbGroup = `P4404|"${this.state.MB.tracks[result.MBindex].recording.id}"|P1810|"${this.state.MB.tracks[result.MBindex].recording.title}"`
             }
@@ -277,7 +311,7 @@ class SpotifyHandler extends React.Component {
             }
 
             if (result.wdId === "" && result.queryMatch === false) {
-                return `||CREATE||LAST|Len|"${name}"||LAST|Den|"${parseInt(year)} audio track by ${artistSpot}"||LAST|P31|${P31_1}||LAST|P1433|${this.props.qid}|P1545|"${result.nr}"|P577|${fullDate}${artistWD}||LAST|P2047|${Math.floor(this.state.album.Tracks[ind].duration_ms / 1000)}U11574|P518|${P437}${creativework}||LAST|${mbGroup}||LAST|P1476|mul:"${name}"||LAST|P1243|"${isrc}"|P4390|Q39893449||LAST|P2207|"${spotTrack}"|P4390|Q39893449|P1810|"${this.state.album.Tracks[ind].name}"||LAST|P437|${P437}||${this.props.qid}|P658|LAST|P1545|"${result.nr}"`;
+                return `||CREATE||LAST|Len|"${name}"||LAST|Den|"${parseInt(year)} audio track by ${artistSpot}"||LAST|P31|${P31_1}||LAST|P1433|${this.props.qid}|P1545|"${result.nr}"|P577|${fullDate}${artistWD}||LAST|P2047|${Math.floor(this.state.album.Tracks[ind].duration_ms / 1000)}U11574|P518|${P437}${creativework}||LAST|${mbGroup}||LAST|P1476|${this.state.langPicked}:"${name}"||LAST|P1243|"${isrc}"|P4390|Q39893449||LAST|P2207|"${spotTrack}"|P4390|Q39893449|P1810|"${this.state.album.Tracks[ind].name}"||LAST|P437|${P437}||${this.props.qid}|P658|LAST|P1545|"${result.nr}"`;
             }
 
             let type = result.queryMatch ? querytrack.entities[result.wdId]?.claims : this.state.wdTrack.result.entities[result.wdId]?.claims;
@@ -300,7 +334,7 @@ class SpotifyHandler extends React.Component {
             }
 
             if (!Array.isArray(type.P1476)) {
-                trackBody += `||${result.wdId}|P1476|mul:"${name}"`;
+                trackBody += `||${result.wdId}|P1476|${this.state.langPicked}:"${name}"`;
             }
 
             if (!Array.isArray(type.P2047)) {
@@ -496,6 +530,7 @@ class SpotifyHandler extends React.Component {
             if (!Array.isArray(this.state.wdAlbum.result.entities[this.props.qid].claims.P577)) {
                 let P577 = "+" + year + '-' + month + '-' + day + "T00:00:00Z/11";
                 if (month === '01' && day === "01") P577 = "+" + year + "-01-01T00:00:00Z/9";
+                else if (!month && !day) P577 = "+" + year + "-01-01T00:00:00Z/9";
                 bodyAlbum += `||${this.props.qid}|P577|${P577}`;
             }
 
@@ -581,6 +616,19 @@ class SpotifyHandler extends React.Component {
 
             if (!Array.isArray(this.state.wdAlbum.result.entities[this.props.qid].claims.P436) && this.state.MB.releaseGroups) {
                 bodyAlbum += `||${this.props.qid}|P436|"${this.state.MB.releaseGroups}"|P1810|"${this.state.MB.titleGr}"`;
+            } else {
+                let found00 = false;
+                for (let b = 0; b < this.state.wdAlbum.result.entities[this.props.qid].claims.P436.length; b++) {
+                    if (this.state.wdAlbum.result.entities[this.props.qid].claims.P436[b].mainsnak.datavalue.value.id === this.state.MB.releaseGroups) {
+                        if (!this.state.wdAlbum.result.entities[this.props.qid].claims.P436[b]?.qualifiers?.P1810) {
+                            bodyAlbum += `||${this.props.qid}|P436|"${this.state.MB.releaseGroups}"|P1810|"${this.state.MB.titleGr}"`;
+                            break;
+                        }
+                    }
+                }
+                if (!found00) {
+                    bodyAlbum += `||${this.props.qid}|P436|"${this.state.MB.releaseGroups}"|P1810|"${this.state.MB.titleGr}"`;
+                }
             }
 
             if (!Array.isArray(this.state.wdAlbum.result.entities[this.props.qid].claims.P1476)) {
@@ -589,7 +637,7 @@ class SpotifyHandler extends React.Component {
                     P1476 = P1476.toLowerCase();
                     P1476 = P1476.replace(/(^\w{1})|(\s{1}\w{1})/g, match => match.toUpperCase());
                 }
-                bodyAlbum += `||${this.props.qid}|P1476|mul:"${P1476}"`;
+                bodyAlbum += `||${this.props.qid}|P1476|${this.state.langPicked}:"${P1476}"`;
             }
 
             if (numberOfDisc === 1) {
@@ -742,13 +790,21 @@ class SpotifyHandler extends React.Component {
         this.setState(state => {
             const list = state.MB.tracks.map((item, j) => {
                 if (j === i) {
-                    return item.title = "ⓧ";
+                    return {
+                        ...item,
+                        recording: {
+                            ...item.recording,
+                            title: "ⓧ"
+                        }
+                    };
                 } else {
                     return item;
                 }
             });
             return {
-                list,
+                MB: {
+                    ...state.MB,
+                    tracks: list}
             };
         });
     };
@@ -877,11 +933,11 @@ class SpotifyHandler extends React.Component {
                           <td>{artist}</td>
                           <td className="isrc">{this.state.album.Tracks2[index].isrc}</td>
                           <td>{result[index].minutes}</td>
-                          <td>{this.state.MB.tracks[MBindex] ?
-                              <div><a href={`https://beta.musicbrainz.org/recording/${this.state.MB.tracks[MBindex].recording.id}`}>"{this.state.MB.tracks[MBindex].title}"</a> <a style={{display: "inline-block", cursor: "pointer"}} onClick={() => {
+                          <td>{this.state.MB.tracks[MBindex] && this.state.MB.tracks[MBindex]?.recording.title !== 'ⓧ' ?
+                              <div><a href={`https://beta.musicbrainz.org/recording/${this.state.MB.tracks[MBindex].recording.id}`}>"{this.state.MB.tracks[MBindex].recording.title}"</a> <a style={{display: "inline-block", cursor: "pointer"}} onClick={() => {
                                   this.onUpdateItem(MBindex);
                                   console.log(`Removed match to MB track registered!`)
-                              }}>{stop}</a></div> : "ⓧ"}</td>
+                              }}>{stop}</a></div> :<p>ⓧ</p>}</td>
                           <td ref={this.myRef}>{result[index].wdStatus}&nbsp;<a style={{display: "inline-block", cursor: "pointer"}} onClick={() => {let ind = index; result[ind].wdStatus = "ⓧ"; result[ind].wdId = ''; result[ind].P1545 = 0; result[ind].queryMatch = false; console.log(`Removed match of track ${ind+1} registered!`)}}>{stop}</a>&nbsp;<a style={{display: "inline-block", cursor: "pointer"}} onClick={() => {let ind = index; result[ind].skip = true;console.log(`Skip of track ${ind+1} registered!`)}}> {skip} </a></td>
                       </tr>
                   )
@@ -932,7 +988,13 @@ class SpotifyHandler extends React.Component {
                           {stop}
                           <span>&nbsp;Unmatch this track and create new.&nbsp;</span>
                           {skip}
-                          <span >&nbsp;Skip this track (no creation). No feedback on buttons.</span>
+                          <span >&nbsp;Skip this track (no creation). Language: </span>
+                          <select value={this.state.langPicked} onChange={(e) => this.setState({langPicked: e.target.value})}>
+                            {this.state.lang.result.results ?
+                                    this.state.lang.result.results.bindings.map((item, index) => <option key={index} value={item.c.value}>{item.display.value}</option>)
+                                    :
+                                    null}
+                            </select>
                       </div>
                   </div>
                   {loading}
