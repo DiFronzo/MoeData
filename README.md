@@ -45,6 +45,6 @@ Then run the build:
   ```docker run -it --rm -p 1337:80 moedata:prod```
 
 ## Usage
-![](https://i.imgur.com/dGqOdzr.png)
+![](https://i.imgur.com/kyxpXLS.png)
 When deployed use the url `/album/%SPOTIFY CODE%&qid=%WIKIDATA ITEM%`. 
-* Example `/album/1ATL5GLyefJaxhQzSPVrLX&qid=Q55146346` gives [Drakes album Scorpion](https://moedata.toolforge.org/album/1ATL5GLyefJaxhQzSPVrLX&qid=Q55146346).
+* Example `/album/7e7t0MCrNDcJZsPwUKjmOc&qid=Q96782371` gives [Pop Smokes album Shoot for the Stars, Aim for the Moon](https://moedata.toolforge.org/album/7e7t0MCrNDcJZsPwUKjmOc&qid=Q96782371).
