@@ -21,7 +21,8 @@
     "json-schema": "^0.4.0",
     "ansi-regex": "^5.0.1",
     "immer": "^9.0.6",
-    "ansi-regex": "^4.1.1"
+    "ansi-regex": "^4.1.1",
+    "node-fetch": "^3.2.10"
   },
   "scripts": {
     "start": "react-scripts start",
