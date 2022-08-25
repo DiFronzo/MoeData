@@ -47,7 +47,8 @@
   "devDependencies": {
     "axios": "^0.21.2",
     "jest-haste-map": "^25.3.0",
-    "react-router-dom": "^5.1.2"
+    "react-router-dom": "^5.1.2",
+    "ansi-regex": "^4.1.1"
   },
   "description": "This is a project to import tracklists information to Wikidata.",
   "main": "index.js",
