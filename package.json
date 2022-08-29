@@ -21,7 +21,6 @@
     "json-schema": "^0.4.0",
     "ansi-regex": "^5.0.1",
     "immer": "^9.0.6",
-    "ansi-regex": "^4.1.1",
     "nth-check": "^2.0.1"
   },
   "scripts": {
@@ -49,8 +48,9 @@
     "axios": "^0.21.2",
     "jest-haste-map": "^25.3.0",
     "react-router-dom": "^5.1.2",
-    "ansi-regex": "^4.1.1",
-    "node-fetch": "^3.2.10"
+    "ansi-regex": "^5.0.1",
+    "node-fetch": "^3.2.10",
+    "nth-check": "^2.0.1"
   },
   "description": "This is a project to import tracklists information to Wikidata.",
   "main": "index.js",
